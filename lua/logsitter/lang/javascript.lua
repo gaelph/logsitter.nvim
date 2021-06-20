@@ -10,12 +10,34 @@ local function first(tbl)
     return tbl[i]
 end
 
+---Checks declare node types the plugin can handle,
+-- and where to place the log line
+-- ## Properties
+-- `name: string`
+--        A name for the Check, for debug and clarity,
+-- `test: (node: treesitter_node, type: string) => boolean`
+--		  The first param is the treesitter node under the cursor,
+--		  the second is its type.
+--        Returns `true` if the node/type should be handled by the `handle` function
+-- `handle: (node: treesitter_node, type: string) => treesitter_node, string`
+--        The first param is the treesitter node under the cursor,
+--        the second is its type.
+--        Returns the node around which the log statement should be placed, and a string --        indicating where to place it (above, below, inside)
+--        If there is no placement possible, should return `nil, nil`
 M.checks = {
     {
         name = "function_call",
+        ---
+        -- @table node
+        -- @string type
+        -- @treturn boolean
         test = function(_, type)
             return type == 'call_expression'
         end,
+        ---
+        -- @table node
+        -- @string type
+        -- @treturn table, string
         handle = function(node, _)
             local grand_parent = node:parent()
 
@@ -73,9 +95,10 @@ M.checks = {
             return consequence, constants.PLACEMENT_INSIDE
         end
     }, {
-        name = "for, while, do",
+        name = "for, while, do, catch",
         test = function(_, type)
-            return type == "for_statement" or type == "while_statement" or type == "do_statement"
+            return type == "for_statement" or type == "while_statement" or type == "do_statement" or type ==
+                       "catch_clause"
         end,
         handle = function(node, _)
             local body = first(node:field("body"))
@@ -92,6 +115,14 @@ M.checks = {
     }
 }
 
+---Expand 'expands' the selection of nodes under the
+-- cursor in order to have something more meaningfull
+-- to log.
+-- For instance, if the cursor is on a function_call statement,
+-- the node under the cursor is likely not the call_expression, but
+-- member_expression, or some getter expression.
+-- `expand()` should reture the function_call node to log the
+-- result of the call instead of the function.
 function M.expand(node)
     local parent = node:parent()
 
@@ -113,6 +144,9 @@ function M.expand(node)
     return node
 end
 
+---Log returns the text to insert.
+-- @string text The stringified (expanded) node under the cursor
+-- @treturn string 
 function M.log(text)
     local label = text:gsub('"', '\\"')
     return [[oconsole.log("]] .. label .. [[: ", ]] .. text .. ")"
