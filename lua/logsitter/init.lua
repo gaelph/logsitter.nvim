@@ -36,11 +36,6 @@ local function parent_declaration(checks, node)
     end
 end
 
--- returns the proper logger for a given format
-local function get_logger(ft)
-    return require('logsitter.lang.' .. ft)
-end
-
 -- returns the posistion at which the log
 -- should be inserted
 local function get_insertion_position(logger, node, winnr)
@@ -68,11 +63,23 @@ local function get_insertion_position(logger, node, winnr)
     return {line, col}
 end
 
+local loggers = {}
 local M = {}
 
-function M.log(filetype)
-    local logger = get_logger(filetype)
-    if logger == nil then return end
+function M.register(logger, for_file_types)
+    for _, filetype in ipairs(for_file_types) do loggers[filetype] = logger end
+end
+
+local function get_logger(filetype)
+    return loggers[filetype]
+end
+
+function M.log()
+    local logger = get_logger(vim.bo.filetype)
+    if logger == nil then
+        print('No logger for ' .. vim.bo.filetype)
+        return
+    end
 
     local winnr = vim.api.nvim_get_current_win()
 
@@ -91,5 +98,10 @@ function M.log(filetype)
     vim.api.nvim_win_set_cursor(winnr, insert_pos)
     vim.api.nvim_feedkeys(output, 'n', true)
 end
+
+M.register(require('logsitter.lang.javascript'),
+           {'javascript', 'javascriptreact', 'javascript.jsx', 'typescript', 'typescriptreact', 'typescript.tsx'})
+M.register(require('logsitter.lang.go'), {'go'})
+M.register(require('logsitter.lang.lua'), {'lua'})
 
 return M
