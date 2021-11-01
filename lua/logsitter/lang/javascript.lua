@@ -41,7 +41,9 @@ M.checks = {
         handle = function(node, _)
             local grand_parent = node:parent()
 
-            if grand_parent == nil then return node, constants.PLACEMENT_BELOW end
+            if grand_parent == nil then
+                return node, constants.PLACEMENT_BELOW
+            end
 
             local gp_type = grand_parent:type()
 
@@ -49,7 +51,9 @@ M.checks = {
                 return node, constants.PLACEMENT_BELOW
             end
 
-            if gp_type == 'return_statement' then return node, constants.PLACEMENT_ABOVE end
+            if gp_type == 'return_statement' then
+                return node, constants.PLACEMENT_ABOVE
+            end
 
             return nil, nil
         end
@@ -97,8 +101,9 @@ M.checks = {
     }, {
         name = "for, while, do, catch",
         test = function(_, type)
-            return type == "for_statement" or type == "while_statement" or type == "do_statement" or type ==
-                       "catch_clause"
+            return
+                type == "for_statement" or type == "while_statement" or type ==
+                    "do_statement" or type == "catch_clause"
         end,
         handle = function(node, _)
             local body = first(node:field("body"))
@@ -144,12 +149,33 @@ function M.expand(node)
     return node
 end
 
----Log returns the text to insert.
+function M.find_function_name(node)
+    local parent = node:parent()
+
+    while parent ~= nil do
+        if parent:type() == 'function_declaration' then
+            return parent:field('name'):text()
+        elseif parent:type() == 'arrow_function' then
+            local gp = parent:parent()
+            return gp:field('name'):text()
+        end
+
+        parent = parent:parent()
+    end
+
+    return 'top_level'
+end
+
+---Inserts the text
 -- @string text The stringified (expanded) node under the cursor
--- @treturn string 
-function M.log(text)
+-- @table  position The current cursor position
+function M.log(text, position)
     local label = text:gsub('"', '\\"')
-    return [[oconsole.log("]] .. label .. [[: ", ]] .. text .. ")"
+    local filepath = vim.fn.expand('%:.')
+    local line = position[1]
+
+    return string.format([[oconsole.log("LS -> %s:%s -> %s: ", %s)]], filepath,
+                         line, label, text)
 end
 
 return M

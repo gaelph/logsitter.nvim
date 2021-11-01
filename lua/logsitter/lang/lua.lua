@@ -12,7 +12,9 @@ M.checks = {
         handle = function(node, _)
             local grand_parent = node:parent()
 
-            if grand_parent == nil then return node, constants.PLACEMENT_BELOW end
+            if grand_parent == nil then
+                return node, constants.PLACEMENT_BELOW
+            end
 
             local gp_type = grand_parent:type()
 
@@ -20,7 +22,9 @@ M.checks = {
                 return node, constants.PLACEMENT_BELOW
             end
 
-            if gp_type == 'return_statement' then return node, constants.PLACEMENT_ABOVE end
+            if gp_type == 'return_statement' then
+                return node, constants.PLACEMENT_ABOVE
+            end
 
             return nil, nil
         end
@@ -28,7 +32,8 @@ M.checks = {
         name = "parameter",
         test = function(node, type)
             local parent = node:parent()
-            return parent ~= nil and parent:type() == "parameters" and type == "identifier"
+            return parent ~= nil and parent:type() == "parameters" and type ==
+                       "identifier"
         end,
         handle = function(node, _)
             return node:parent(), constants.PLACEMENT_BELOW
@@ -72,15 +77,20 @@ function M.expand(node)
     if parent ~= nil then
         local type = parent:type()
 
-        if type == 'function_call' or type == 'field_expression' then return parent end
+        if type == 'function_call' or type == 'field_expression' then
+            return parent
+        end
+        print("type: " .. type)
     end
 
     return node
 end
 
-function M.log(text)
+function M.log(text, position, _winnr)
     local label = text:gsub('"', '\\"')
-    return "oprint(\"" .. label .. ": \" .. " .. text .. ")"
+
+    return
+        string.format([[oprint("[LS] %s: " .. vim.inspect(%s))]], label, text)
 end
 
 return M

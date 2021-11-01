@@ -19,7 +19,9 @@ M.checks = {
         handle = function(node, _)
             local grand_parent = node:parent()
 
-            if grand_parent == nil then return node, constants.PLACEMENT_BELOW end
+            if grand_parent == nil then
+                return node, constants.PLACEMENT_BELOW
+            end
 
             local gp_type = grand_parent:type()
 
@@ -27,7 +29,9 @@ M.checks = {
                 return node, constants.PLACEMENT_BELOW
             end
 
-            if gp_type == 'return_statement' then return node, constants.PLACEMENT_ABOVE end
+            if gp_type == 'return_statement' then
+                return node, constants.PLACEMENT_ABOVE
+            end
 
             return nil, nil
         end
@@ -75,7 +79,9 @@ M.checks = {
     }, {
         name = "for, while, do",
         test = function(_, type)
-            return type == "for_statement" or type == "while_statement" or type == "do_statement"
+            return
+                type == "for_statement" or type == "while_statement" or type ==
+                    "do_statement"
         end,
         handle = function(node, _)
             local body = first(node:field("body"))
@@ -113,9 +119,16 @@ function M.expand(node)
     return node
 end
 
-function M.log(text)
+---Inserts the text
+-- @string text The stringified (expanded) node under the cursor
+-- @table  position The current cursor position
+function M.log(text, position)
     local label = text:gsub('"', '\\"')
-    return [[ofmt.Printf("]] .. label .. [[: %+v\n", ]] .. text .. ")"
+    local filepath = vim.fn.expand('%:.')
+    local line = position[1]
+
+    return string.format([[ofmt.Printf("LS -> %s:%s -> %s: %%+v\n", %s)]],
+                         filepath, line, label, text)
 end
 
 return M
