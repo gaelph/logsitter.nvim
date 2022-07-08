@@ -20,21 +20,41 @@ use {"gaelph/logsitter", requires = {"nvim-treesitter/nvim-treesitter"}}
 
 ## Example usage
 
-VimL:
-```vim
-augroup Logsitter
-	au!
-	au  FileType javascript   nnoremap <localleader>lg :Logsitter javascript<cr>
-	au  FileType go           nnoremap <localleader>lg :Logsitter go<cr>
-	au  FileType lua          nnoremap <localleader>lg :Logsitter lua<cr>
-augroup END
+lua:
+```lua
+vim.api.nvim_create_augroup("LogSitter", { clear = true })
+vim.api.nvim_create_autocmd("FileType", {
+	group = "Logsitter",
+	pattern = "javascript,go,lua",
+	callback = function()
+		vim.keymap.set("n", "<localleader>lg", function()
+			require("logsitter").log()
+		end)
+	end,
+})
 ```
 
 There is also a lua function:
 ```lua
-require("logsitter").log(file_type)
+require("logsitter").log()
 ```
 
+
+To use Logsitter with other file types:
+
+```lua
+-- This can go in after/ftplugin/svelte.lua
+local logsitter = require("logsitter")
+local javascript_logger = require("logsitter.lang.javascript")
+
+-- tell logsitter to use the javascript_logger when the filetype is svelte
+logsitter.register(javascript_logger, { "svelte" })
+
+vim.keymap.set("n", "<localleader>lg", function()
+	logsitter.log()
+end)
+
+```
 ## License
 
 MIT
