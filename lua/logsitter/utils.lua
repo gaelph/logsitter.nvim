@@ -7,7 +7,7 @@ end
 
 -- Makes node text fit on one line
 function M.node_text(node)
-	return vim.treesitter.query.get_node_text(node, 0)
+	return vim.treesitter.get_node_text(node, 0)
 end
 
 --- Return `true` if `str` starts with `start`
