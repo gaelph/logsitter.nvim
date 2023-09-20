@@ -9,7 +9,7 @@ Makes debugging easier by automating the process of writting log messages.
 
 With packer:
 ```lua
-use {"gaelph/logsitter", requires = {"nvim-treesitter/nvim-treesitter"}}
+use {"gaelph/logsitter.nvim", requires = {"nvim-treesitter/nvim-treesitter"}}
 ```
 
 ## Supported Languages
