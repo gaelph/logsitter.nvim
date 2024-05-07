@@ -3,29 +3,32 @@
 --
 -- @module logsitter
 --
--- @todo Handle Function Name declaration (print ”Funtion <naninana> called”)
+-- @todo Handle Function Name declaration (print ”Function <naninana> called”)
 -- @todo Handle Properties in literal object declaration
--- @todo Handle visual selection (only single line ones)
 -- @todo Handle motions (no multiline)
---
+
+---@meta
+require("logsitter.types.logger")
+
 local tsutils = require("nvim-treesitter.ts_utils")
 
 local constants = require("logsitter.constants")
 local u = require("logsitter.utils")
 
 --- Finds the node after which the "log" should be inserted
--- @todo refactor to be more legible
+---@param checks Check[]
+---@param node TSNode
+---@return TSNode|nil, Placement
 local function parent_declaration(checks, node)
 	local parent = node
 
 	while parent ~= nil do
 		local type = parent:type()
 		local r = nil
-		local placement = "below"
+		local placement = "below" ---@type string|nil
 
 		for _, c in ipairs(checks) do
 			if c.test(parent, type) then
-				print("found a " .. c.name)
 				r, placement = c.handle(parent, type)
 
 				if r ~= nil then
@@ -36,10 +39,17 @@ local function parent_declaration(checks, node)
 
 		parent = parent:parent()
 	end
+
+	return node, constants.PLACEMENT_BELOW
 end
 
--- returns the posistion at which the log
--- should be inserted
+---@private
+---Returns the position at which the log should be inserted,
+---as a line (1 indexed) and column tuple.
+---@param logger Logger
+---@param node TSNode
+---@param winnr number
+---@return [number, number]
 local function get_insertion_position(logger, node, winnr)
 	local pos = vim.api.nvim_win_get_cursor(winnr)
 	local decl, placement = parent_declaration(logger.checks, node)
@@ -63,19 +73,31 @@ local function get_insertion_position(logger, node, winnr)
 	return { line, col }
 end
 
+---@private
+---@type table<string, Logger>
 local loggers = {}
+
+---@private
+---Returns the logger for a filetype
+---@param filetype string
+---@return Logger
+local function get_logger(filetype)
+	return loggers[filetype]
+end
+
 local M = {}
 
+---Registers a logger for a filetype
+---@param logger Logger
+---@param for_file_types string[]
 function M.register(logger, for_file_types)
 	for _, filetype in ipairs(for_file_types) do
 		loggers[filetype] = logger
 	end
 end
 
-local function get_logger(filetype)
-	return loggers[filetype]
-end
-
+---Adds a new log statement to the current buffer, detects where to place it
+---using treesitter
 function M.log()
 	local logger = get_logger(vim.bo.filetype)
 	if logger == nil then
@@ -83,12 +105,16 @@ function M.log()
 		return
 	end
 
+	local pos = vim.fn.getpos(".")
+
 	local winnr = vim.api.nvim_get_current_win()
 
+	---@type TSNode
 	local node = tsutils.get_node_at_cursor(winnr)
 
 	if node == nil then
 		vim.cmd('echoerr "No node found"')
+		return
 	end
 
 	local insert_pos = get_insertion_position(logger, node, winnr)
@@ -101,8 +127,14 @@ function M.log()
 
 	vim.api.nvim_win_set_cursor(winnr, insert_pos)
 	vim.api.nvim_feedkeys(output, "n", true)
+
+	-- reset cursor position
+	vim.defer_fn(function()
+		vim.api.nvim_win_set_cursor(winnr, { pos[2], pos[3] })
+	end, 10)
 end
 
+---Same as log(), but for visual selection
 function M.log_visual()
 	local logger = get_logger(vim.bo.filetype)
 	if logger == nil then
@@ -125,6 +157,7 @@ function M.log_visual()
 
 	if node == nil then
 		vim.cmd('echoerr "No node found"')
+		return
 	end
 
 	local insert_pos = get_insertion_position(logger, node, winnr)

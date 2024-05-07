@@ -1,18 +1,16 @@
-local M = {}
+---@meta
+require("logsitter.types.logger")
 
-local strings = require("logsitter.utils")
+---@class SwiftLogger : Logger
+---@field log fun(text:string, insert_pos:Position, winnr:number)  Adds a log statement to the buffer.
+---@field expand fun(node:TSNode): TSNode		Expands the node to have something meaning full to print.
+---@field checks Check[]		List of checks to run on the node to decide where to place the log statement.
+local SwiftLogger = {}
+
+local u = require("logsitter.utils")
 local constants = require("logsitter.constants")
 
-local function first(tbl)
-	local i = 0
-	while tbl[i] == nil and i <= #tbl do
-		i = i + 1
-	end
-
-	return tbl[i]
-end
-
-M.checks = {
+SwiftLogger.checks = {
 	{
 		name = "function_call",
 		test = function(_, type)
@@ -100,11 +98,11 @@ M.checks = {
 	{
 		name = "declaration",
 		test = function(_, type)
-			return strings.ends_with(type, "declaration")
+			return vim.endswidth(type, "declaration")
 		end,
 		handle = function(node, _)
 			if node:type() == "function_declaration" then
-				local body = first(node:field("body"))
+				local body = u.first(node:field("body"))
 				return body, constants.PLACEMENT_INSIDE
 			end
 
@@ -183,7 +181,7 @@ M.checks = {
 	{
 		name = "statement",
 		test = function(_, type)
-			return strings.ends_with(type, "statement")
+			return vim.endswidth(type, "statement")
 		end,
 		handle = function(node, _)
 			return node, constants.PLACEMENT_BELOW
@@ -191,7 +189,7 @@ M.checks = {
 	},
 }
 
-function M.expand(node)
+function SwiftLogger.expand(node)
 	local parent = node:parent()
 
 	if parent ~= nil then
@@ -220,13 +218,10 @@ function M.expand(node)
 	return node
 end
 
----Inserts the text
--- @string text The stringified (expanded) node under the cursor
--- @table  position The current cursor position
-function M.log(text, _)
+function SwiftLogger.log(text, _)
 	local label = text:gsub('"', '\\"')
 
 	return string.format([[oprint("LS -> \(#file):\(#line) -> %s: \(%s)")]], label, text)
 end
 
-return M
+return SwiftLogger

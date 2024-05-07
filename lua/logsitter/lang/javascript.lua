@@ -1,16 +1,14 @@
-local M = {}
+---@meta
+require("logsitter.types.logger")
 
-local strings = require("logsitter.utils")
+---@class JavascriptLogger : Logger
+---@field log fun(text:string, insert_pos:Position, winnr:number)  Adds a log statement to the buffer.
+---@field expand fun(node:TSNode): TSNode		Expands the node to have something meaning full to print.
+---@field checks Check[]		List of checks to run on the node to decide where to place the log statement.
+local JavascriptLogger = {}
+
+local u = require("logsitter.utils")
 local constants = require("logsitter.constants")
-
-local function first(tbl)
-	local i = 0
-	while tbl[i] == nil do
-		i = i + 1
-	end
-
-	return tbl[i]
-end
 
 ---Checks declare node types the plugin can handle,
 -- and where to place the log line
@@ -26,20 +24,13 @@ end
 --        the second is its type.
 --        Returns the node around which the log statement should be placed, and a string --        indicating where to place it (above, below, inside)
 --        If there is no placement possible, should return `nil, nil`
-M.checks = {
+---@type Check[]
+JavascriptLogger.checks = {
 	{
 		name = "function_call",
-		---
-		-- @table node
-		-- @string type
-		-- @treturn boolean
 		test = function(_, type)
 			return type == "call_expression"
 		end,
-		---
-		-- @table node
-		-- @string type
-		-- @treturn table, string
 		handle = function(node, _)
 			local grand_parent = node:parent()
 
@@ -49,7 +40,7 @@ M.checks = {
 
 			local gp_type = grand_parent:type()
 
-			if gp_type == "statement_block" or gp_type == "function_definition" then
+			if gp_type == "statement_block" or gp_type == "function_definition" or gp_type == "method_definition" then
 				return node, constants.PLACEMENT_BELOW
 			end
 
@@ -63,9 +54,17 @@ M.checks = {
 	{
 		name = "parameter",
 		test = function(_, type)
-			return type == "formal_parameters"
+			return vim.endswith(type, "_parameter")
 		end,
 		handle = function(node, _)
+			local parent = node:parent():parent()
+			if vim.tbl_contains({
+				"function_definition",
+				"method_definition",
+			}, parent:type()) then
+				local body = u.first(parent:field("body"))
+				return body, constants.PLACEMENT_INSIDE
+			end
 			return node, constants.PLACEMENT_BELOW
 		end,
 	},
@@ -81,7 +80,7 @@ M.checks = {
 	{
 		name = "declaration",
 		test = function(_, type)
-			return strings.ends_with(type, "declaration")
+			return vim.endswith(type, "declaration")
 		end,
 		handle = function(node, _)
 			return node, constants.PLACEMENT_BELOW
@@ -90,7 +89,7 @@ M.checks = {
 	{
 		name = "assign",
 		test = function(_, type)
-			return type == "assignement_expression"
+			return type == "assignment_expression"
 		end,
 		handle = function(node, _)
 			return node, constants.PLACEMENT_BELOW
@@ -102,7 +101,7 @@ M.checks = {
 			return type == "if_statement"
 		end,
 		handle = function(node, _)
-			local consequence = first(node:field("consequence"))
+			local consequence = u.first(node:field("consequence"))
 			return consequence, constants.PLACEMENT_INSIDE
 		end,
 	},
@@ -115,7 +114,7 @@ M.checks = {
 				or type == "catch_clause"
 		end,
 		handle = function(node, _)
-			local body = first(node:field("body"))
+			local body = u.first(node:field("body"))
 			return body, constants.PLACEMENT_INSIDE
 		end,
 	},
@@ -131,7 +130,7 @@ M.checks = {
 	{
 		name = "statement",
 		test = function(_, type)
-			return strings.ends_with(type, "statement")
+			return vim.endswith(type, "statement")
 		end,
 		handle = function(node, _)
 			return node, constants.PLACEMENT_BELOW
@@ -140,14 +139,16 @@ M.checks = {
 }
 
 ---Expand 'expands' the selection of nodes under the
--- cursor in order to have something more meaningfull
+-- cursor in order to have something more meaningful
 -- to log.
 -- For instance, if the cursor is on a function_call statement,
 -- the node under the cursor is likely not the call_expression, but
 -- member_expression, or some getter expression.
--- `expand()` should reture the function_call node to log the
+-- `expand()` should return the function_call node to log the
 -- result of the call instead of the function.
-function M.expand(node)
+---@param node TSNode
+---@return TSNode
+function JavascriptLogger.expand(node)
 	local parent = node:parent()
 
 	if parent ~= nil then
@@ -171,27 +172,10 @@ function M.expand(node)
 	return node
 end
 
-function M.find_function_name(node)
-	local parent = node:parent()
-
-	while parent ~= nil do
-		if parent:type() == "function_declaration" then
-			return parent:field("name"):text()
-		elseif parent:type() == "arrow_function" then
-			local gp = parent:parent()
-			return gp:field("name"):text()
-		end
-
-		parent = parent:parent()
-	end
-
-	return "top_level"
-end
-
 ---Inserts the text
--- @string text The stringified (expanded) node under the cursor
--- @table  position The current cursor position
-function M.log(text, position)
+---@param text string  The stringified (expanded) node under the cursor
+---@param position [number, number]  The current cursor position
+function JavascriptLogger.log(text, position)
 	local label = text:gsub('"', '\\"')
 	local filepath = vim.fn.expand("%:.")
 	local line = position[1]
@@ -199,4 +183,4 @@ function M.log(text, position)
 	return string.format([[oconsole.log("LS -> %s:%s -> %s: ", %s)]], filepath, line, label, text)
 end
 
-return M
+return JavascriptLogger

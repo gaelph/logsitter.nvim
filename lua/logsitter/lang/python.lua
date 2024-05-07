@@ -1,18 +1,16 @@
-local M = {}
+---@meta
+require("logsitter.types.logger")
 
-local strings = require("logsitter.utils")
+---@class PythonLogger : Logger
+---@field log fun(text:string, insert_pos:Position, winnr:number)  Adds a log statement to the buffer.
+---@field expand fun(node:TSNode): TSNode		Expands the node to have something meaning full to print.
+---@field checks Check[]		List of checks to run on the node to decide where to place the log statement.
+local PythonLogger = {}
+
+local u = require("logsitter.utils")
 local constants = require("logsitter.constants")
 
-local function first(tbl)
-	local i = 0
-	while tbl[i] == nil do
-		i = i + 1
-	end
-
-	return tbl[i]
-end
-
-M.checks = {
+PythonLogger.checks = {
 	{
 		name = "function_call",
 		test = function(_, type)
@@ -64,7 +62,7 @@ M.checks = {
 	{
 		name = "declaration",
 		test = function(_, type)
-			return strings.ends_with(type, "definition")
+			return vim.endswith(type, "definition")
 		end,
 		handle = function(node, _)
 			return node, constants.PLACEMENT_BELOW
@@ -85,7 +83,7 @@ M.checks = {
 			return type == "if_statement"
 		end,
 		handle = function(node, _)
-			local consequence = first(node:field("consequence"))
+			local consequence = u.first(node:field("consequence"))
 			return consequence, constants.PLACEMENT_ABOVE
 		end,
 	},
@@ -95,14 +93,14 @@ M.checks = {
 			return type == "for_statement" or type == "while_statement" or type == "do_statement"
 		end,
 		handle = function(node, _)
-			local body = first(node:field("body"))
+			local body = u.first(node:field("body"))
 			return body, constants.PLACEMENT_ABOVE
 		end,
 	},
 	{
 		name = "statement",
 		test = function(_, type)
-			return strings.ends_with(type, "statement")
+			return vim.endswith(type, "statement")
 		end,
 		handle = function(node, _)
 			return node, constants.PLACEMENT_BELOW
@@ -110,7 +108,7 @@ M.checks = {
 	},
 }
 
-function M.expand(node)
+function PythonLogger.expand(node)
 	local parent = node:parent()
 
 	if parent ~= nil then
@@ -134,10 +132,7 @@ function M.expand(node)
 	return node
 end
 
----Inserts the text
--- @string text The stringified (expanded) node under the cursor
--- @table  position The current cursor position
-function M.log(text, position)
+function PythonLogger.log(text, position)
 	local label = text:gsub('"', '\\"')
 	local filepath = vim.fn.expand("%:.")
 	local line = position[1]
@@ -145,4 +140,4 @@ function M.log(text, position)
 	return string.format([[oprint(f'LS -> %s:%s -> %s: {%s}\n')]], filepath, line, label, text)
 end
 
-return M
+return PythonLogger

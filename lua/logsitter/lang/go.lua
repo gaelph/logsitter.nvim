@@ -1,18 +1,16 @@
-local M = {}
+---@meta
+require("logsitter.types.logger")
 
-local strings = require("logsitter.utils")
+---@class GoLogger : Logger
+---@field checks Check[]
+---@field log fun(text:string, insert_pos:Position, winnr:number)
+---@field expand fun(node:TSNode): TSNode
+local GoLogger = {}
+
+local u = require("logsitter.utils")
 local constants = require("logsitter.constants")
 
-local function first(tbl)
-	local i = 0
-	while tbl[i] == nil do
-		i = i + 1
-	end
-
-	return tbl[i]
-end
-
-M.checks = {
+GoLogger.checks = {
 	{
 		name = "function_call",
 		test = function(_, type)
@@ -59,7 +57,7 @@ M.checks = {
 	{
 		name = "declaration",
 		test = function(_, type)
-			return strings.ends_with(type, "declaration")
+			return vim.endswith(type, "declaration")
 		end,
 		handle = function(node, _)
 			return node, constants.PLACEMENT_BELOW
@@ -80,7 +78,7 @@ M.checks = {
 			return type == "if_statement"
 		end,
 		handle = function(node, _)
-			local consequence = first(node:field("consequence"))
+			local consequence = u.first(node:field("consequence"))
 			return consequence, constants.PLACEMENT_INSIDE
 		end,
 	},
@@ -90,14 +88,14 @@ M.checks = {
 			return type == "for_statement" or type == "while_statement" or type == "do_statement"
 		end,
 		handle = function(node, _)
-			local body = first(node:field("body"))
+			local body = u.first(node:field("body"))
 			return body, constants.PLACEMENT_INSIDE
 		end,
 	},
 	{
 		name = "statement",
 		test = function(_, type)
-			return strings.ends_with(type, "statement")
+			return vim.endswith(type, "statement")
 		end,
 		handle = function(node, _)
 			return node, constants.PLACEMENT_BELOW
@@ -105,7 +103,10 @@ M.checks = {
 	},
 }
 
-function M.expand(node)
+---Expands the given node the its parent so there is some thing meaning full to log.
+---@param node TSNode
+---@return TSNode
+function GoLogger.expand(node)
 	local parent = node:parent()
 
 	if parent ~= nil then
@@ -129,10 +130,11 @@ function M.expand(node)
 	return node
 end
 
----Inserts the text
--- @string text The stringified (expanded) node under the cursor
--- @table  position The current cursor position
-function M.log(text, position)
+---Renders the log message for the given text and position.
+---@param text string
+---@param position [number, number]
+---@return string
+function GoLogger.log(text, position)
 	local label = text:gsub('"', '\\"')
 	local filepath = vim.fn.expand("%:.")
 	local line = position[1]
@@ -140,4 +142,4 @@ function M.log(text, position)
 	return string.format([[olog.Printf("LS -> %s:%s -> %s: %%+v\n", %s)]], filepath, line, label, text)
 end
 
-return M
+return GoLogger
