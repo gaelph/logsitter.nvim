@@ -7,10 +7,24 @@ Makes debugging easier by automating the process of writing log messages.
 
 ## Install
 
-With packer:
+With Lazy:
 ```lua
-use {"gaelph/logsitter.nvim", requires = {"nvim-treesitter/nvim-treesitter"}}
+{"gaelph/logsitter.nvim", dependencies = {"nvim-treesitter/nvim-treesitter"}}
+
+-- with an optional config
+{
+	"gaelph/logsitter.nvim",
+	dependencies = {"nvim-treesitter/nvim-treesitter"},
+	config = function()
+		require("logsitter").setup({
+			path_format = "default",
+			prefix = "[LS] ->",
+			separator = "->",
+		})
+	end
+}
 ```
+
 
 ## Supported Languages
 
@@ -64,6 +78,22 @@ vim.keymap.set("n", "<localleader>lg", function()
 	logsitter.log()
 end)
 
+```
+## Configuration
+These are the default contfiguration values:
+```lua
+local DefaultOptions = {
+	-- Format for the file name.
+	-- Available values:
+	-- - "default":  path to file relative to the current working directory
+	-- - "short":    shortened path (with the builtin `pathshorten()` function)
+	-- - "fileonly": only display the file name
+	path_format = "default",
+	-- The prefix for the log message. Can be an emoji like "🚀"
+	prefix = "[LS] ->",
+	-- The separator between the file path and the displayed value
+	separator = "->",
+}
 ```
 
 ## License

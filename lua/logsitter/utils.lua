@@ -29,4 +29,18 @@ function M.node_text(node)
 	return vim.treesitter.get_node_text(node, 0)
 end
 
+---@param filepath string
+---@param winnr number
+---@retunr string
+function M.shortenpath(filepath, winnr)
+	local cwd = vim.fn.getcwd(winnr)
+	filepath = filepath:sub(#cwd)
+	filepath = vim.fs.normalize(filepath)
+	local filename = vim.fn.expand("%:t")
+
+	filepath = vim.fn.pathshorten(filepath .. "/" .. filename)
+
+	return filepath
+end
+
 return M

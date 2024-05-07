@@ -2,11 +2,12 @@
 require("logsitter.types.logger")
 
 ---@class LuaLogger : Logger
----@field log fun(text:string, insert_pos:Position, winnr:number)  Adds a log statement to the buffer.
+---@field log fun(text:string, insert_pos:Position, winnr:number, options:LogsitterOptions): string  Adds a log statement to the buffer.
 ---@field expand fun(node:TSNode): TSNode		Expands the node to have something meaning full to print.
 ---@field checks Check[]		List of checks to run on the node to decide where to place the log statement.
 local LuaLogger = {}
 
+local u = require("logsitter.utils")
 local constants = require("logsitter.constants")
 
 ---@type Check[]
@@ -100,12 +101,29 @@ end
 
 ---@param text string
 -- @param position number
--- @param winnr number
+---@param winnr number
+---@param options LogsitterOptions
 ---@return string
-function LuaLogger.log(text, _, _)
+function LuaLogger.log(text, position, winnr, options)
 	local label = text:gsub('"', '\\"')
+	local filepath = vim.fn.expand("%:.")
+	local line = position[1]
 
-	return string.format([[oprint("[LS] %s: " .. vim.inspect(%s))]], label, text)
+	if options.path_format == "short" then
+		filepath = u.shortenpath(vim.fn.expand("%:p:h"), winnr)
+	elseif options.path_format == "fileonly" then
+		filepath = vim.fn.expand("%:p:t")
+	end
+
+	return string.format(
+		[[oprint("%s %s:%s %s %s: " .. vim.inspect(%s))]],
+		options.prefix,
+		filepath,
+		line,
+		options.separator,
+		label,
+		text
+	)
 end
 
 return LuaLogger
