@@ -127,8 +127,7 @@ function M.log(text, position)
     local filepath = vim.fn.expand('%:.')
     local line = position[1]
 
-    return string.format([[ofmt.Printf("LS -> %s:%s -> %s: %%+v\n", %s)]],
-                         filepath, line, label, text)
+	return string.format([[olog.Printf("LS -> %s:%s -> %s: %%+v\n", %s)]], filepath, line, label, text)
 end
 
 return M
