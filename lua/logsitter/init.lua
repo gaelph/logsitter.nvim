@@ -105,7 +105,17 @@ end
 
 M.register(
 	require("logsitter.lang.javascript"),
-	{ "javascript", "javascriptreact", "javascript.jsx", "typescript", "typescriptreact", "typescript.tsx" }
+	{
+		"javascript",
+		"javascriptreact",
+		"javascript.jsx",
+		"typescript",
+		"typescriptreact",
+		"typescript.tsx",
+		"vue",
+		"svelte",
+		"astro",
+	}
 )
 M.register(require("logsitter.lang.go"), { "go" })
 M.register(require("logsitter.lang.lua"), { "lua" })
