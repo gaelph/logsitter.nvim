@@ -130,7 +130,7 @@ function M.log()
 	output = u.rtc(output)
 
 	vim.api.nvim_win_set_cursor(winnr, insert_pos)
-	vim.api.nvim_feedkeys(output, "n", true)
+	vim.api.nvim_feedkeys(output, "n", false)
 
 	-- reset cursor position
 	vim.defer_fn(function()
@@ -182,7 +182,7 @@ function M.log_visual()
 	output = u.rtc(output)
 
 	vim.api.nvim_win_set_cursor(winnr, insert_pos)
-	vim.api.nvim_feedkeys(output, "n", true)
+	vim.api.nvim_feedkeys(output, "n", false)
 end
 
 M.register(require("logsitter.lang.javascript"), {
