@@ -125,7 +125,7 @@ function M.log()
 
 	local text = u.node_text(logger.expand(node))
 
-	local output = logger.log(text, insert_pos, winnr)
+	local output = logger.log(text, insert_pos, winnr, M.options)
 	output = output .. "<esc>"
 	output = u.rtc(output)
 
