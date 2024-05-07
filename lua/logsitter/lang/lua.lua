@@ -48,6 +48,16 @@ LuaLogger.checks = {
 		end,
 	},
 	{
+		name = "argument",
+		test = function(node, type)
+			local parent = node:parent()
+			return parent ~= nil and parent:type() == "arguments"
+		end,
+		handle = function(node, _)
+			return node:parent(), constants.PLACEMENT_BELOW
+		end,
+	},
+	{
 		name = "return",
 		test = function(node, _)
 			local parent = node:parent()
@@ -67,9 +77,18 @@ LuaLogger.checks = {
 		end,
 	},
 	{
+		name = "statement",
+		test = function(_, type)
+			return vim.endswith(type, "statement")
+		end,
+		handle = function(node, _)
+			return node, constants.PLACEMENT_BELOW
+		end,
+	},
+	{
 		name = "if, for, while",
 		test = function(_, type)
-			return type == "condition_expression"
+			return type == "if_statement"
 		end,
 		handle = function(node, _)
 			local parent = node:parent()
@@ -90,10 +109,9 @@ function LuaLogger.expand(node)
 	if parent ~= nil then
 		local type = parent:type()
 
-		if type == "function_call" or type == "field_expression" then
+		if type == "function_call" or type == "dot_index_expression" then
 			return parent
 		end
-		print("type: " .. type)
 	end
 
 	return node
