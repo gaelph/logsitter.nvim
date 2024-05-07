@@ -77,26 +77,34 @@ LuaLogger.checks = {
 		end,
 	},
 	{
+		name = "if",
+		test = function(_, type)
+			return type == "if_statement" or type == "elseif_statement"
+		end,
+		handle = function(node, _)
+			local node = u.first(node:field("consequence"))
+
+			return node, constants.PLACEMENT_ABOVE
+		end,
+	},
+	{
+		name = "for, while",
+		test = function(_, type)
+			return type == "for_statement" or type == "while_statement"
+		end,
+		handle = function(node, _)
+			local node = u.first(node:field("body"))
+
+			return node, constants.PLACEMENT_ABOVE
+		end,
+	},
+	{
 		name = "statement",
 		test = function(_, type)
 			return vim.endswith(type, "statement")
 		end,
 		handle = function(node, _)
 			return node, constants.PLACEMENT_BELOW
-		end,
-	},
-	{
-		name = "if, for, while",
-		test = function(_, type)
-			return type == "if_statement"
-		end,
-		handle = function(node, _)
-			local parent = node:parent()
-			if parent ~= nil then
-				local first_child = parent:child(1)
-				return first_child, constants.PLACEMENT_INSIDE
-			end
-			return node
 		end,
 	},
 }
