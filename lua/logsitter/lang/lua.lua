@@ -19,22 +19,13 @@ LuaLogger.checks = {
 		end,
 		handle = function(node, _)
 			local grand_parent = node:parent()
-
-			if grand_parent == nil then
-				return node, constants.PLACEMENT_BELOW
-			end
-
 			local gp_type = grand_parent:type()
-
-			if gp_type == "statement_block" or gp_type == "function_definition" then
-				return node, constants.PLACEMENT_BELOW
-			end
 
 			if gp_type == "return_statement" then
 				return node, constants.PLACEMENT_ABOVE
 			end
 
-			return nil, nil
+			return node, constants.PLACEMENT_BELOW
 		end,
 	},
 	{
@@ -116,6 +107,9 @@ function LuaLogger.expand(node)
 
 	if parent ~= nil then
 		local type = parent:type()
+		if type == "dot_index_expression" and parent:parent():type() == "function_call" then
+			return parent:parent()
+		end
 
 		if type == "function_call" or type == "dot_index_expression" then
 			return parent
