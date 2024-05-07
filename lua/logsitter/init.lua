@@ -134,6 +134,10 @@ function M.log()
 
 	-- reset cursor position
 	vim.defer_fn(function()
+		-- if we are inserting above, move the cursor to the next line
+		if insert_pos[1] == pos[2] then
+			pos[2] = pos[2] + 1
+		end
 		vim.api.nvim_win_set_cursor(winnr, { pos[2], pos[3] })
 	end, 10)
 end
