@@ -14,9 +14,14 @@ use {"gaelph/logsitter.nvim", requires = {"nvim-treesitter/nvim-treesitter"}}
 
 ## Supported Languages
 
-	* Javascript/Typescript (`console.log()`)
-	* Golang (`fmt.Println("... %+v\n", ...)`)
+	* Javascript/Typescript and Svelte/Vue/Astro (`console.log()`)
+	* Golang (`log.Println("... %+v\n", ...)`)
 	* Lua (`print()`)
+
+Experimental support for:
+	* Python (`print()`)
+	* Swift (`print()`)
+
 
 ## Example usage
 
