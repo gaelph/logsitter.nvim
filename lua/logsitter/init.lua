@@ -10,6 +10,8 @@
 ---@meta
 require("logsitter.types.logger")
 
+local DefaultOptions = require("logsitter.options")
+
 local tsutils = require("nvim-treesitter.ts_utils")
 
 local constants = require("logsitter.constants")
@@ -85,7 +87,9 @@ local function get_logger(filetype)
 	return loggers[filetype]
 end
 
-local M = {}
+local M = {
+	options = DefaultOptions,
+}
 
 ---Registers a logger for a filetype
 ---@param logger Logger
@@ -173,7 +177,7 @@ function M.log_visual()
 
 	text = string.sub(text, start[3], stop[3])
 
-	output = logger.log(text, insert_pos, winnr)
+	output = logger.log(text, insert_pos, winnr, M.options)
 	output = output .. "<esc>gv"
 	output = u.rtc(output)
 
@@ -196,5 +200,11 @@ M.register(require("logsitter.lang.go"), { "go" })
 M.register(require("logsitter.lang.lua"), { "lua" })
 M.register(require("logsitter.lang.python"), { "python" })
 M.register(require("logsitter.lang.swift"), { "swift" })
+
+---Logsitter
+---@param options LogsitterOptions
+function M.setup(options)
+	M.options = vim.tbl_deep_extend("force", DefaultOptions, options or {})
+end
 
 return M

@@ -1,6 +1,5 @@
-
 ---@class Logger
----@field log fun(text:string, insert_pos:Position, winnr:number)  Adds a log statement to the buffer.
+---@field log fun(text:string, insert_pos:Position, winnr:number, options:LogsitterOptions)  Adds a log statement to the buffer.
 ---@field expand fun(node:TSNode): TSNode		Expands the node to have something meaning full to print.
 ---@field checks Check[]		List of checks to run on the node to decide where to place the log statement.
 

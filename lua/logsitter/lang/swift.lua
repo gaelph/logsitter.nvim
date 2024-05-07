@@ -2,7 +2,7 @@
 require("logsitter.types.logger")
 
 ---@class SwiftLogger : Logger
----@field log fun(text:string, insert_pos:Position, winnr:number)  Adds a log statement to the buffer.
+---@field log fun(text:string, insert_pos:Position, winnr:number, options:LogsitterOptions): string  Adds a log statement to the buffer.
 ---@field expand fun(node:TSNode): TSNode		Expands the node to have something meaning full to print.
 ---@field checks Check[]		List of checks to run on the node to decide where to place the log statement.
 local SwiftLogger = {}
@@ -218,10 +218,16 @@ function SwiftLogger.expand(node)
 	return node
 end
 
-function SwiftLogger.log(text, _)
+function SwiftLogger.log(text, _, _, options)
 	local label = text:gsub('"', '\\"')
 
-	return string.format([[oprint("LS -> \(#file):\(#line) -> %s: \(%s)")]], label, text)
+	return string.format(
+		[[oprint("%s \(#file):\(#line) %s %s: \(%s)")]],
+		options.prefix,
+		options.separator,
+		label,
+		text
+	)
 end
 
 return SwiftLogger

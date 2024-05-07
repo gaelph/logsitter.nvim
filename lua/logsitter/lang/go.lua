@@ -3,7 +3,7 @@ require("logsitter.types.logger")
 
 ---@class GoLogger : Logger
 ---@field checks Check[]
----@field log fun(text:string, insert_pos:Position, winnr:number)
+---@field log fun(text:string, insert_pos:Position, winnr:number, options: LogsitterOptions): string
 ---@field expand fun(node:TSNode): TSNode
 local GoLogger = {}
 
@@ -133,13 +133,29 @@ end
 ---Renders the log message for the given text and position.
 ---@param text string
 ---@param position [number, number]
+---@param winnr number
+---@param options LogsitterOptions
 ---@return string
-function GoLogger.log(text, position)
+function GoLogger.log(text, position, winnr, options)
 	local label = text:gsub('"', '\\"')
 	local filepath = vim.fn.expand("%:.")
 	local line = position[1]
 
-	return string.format([[olog.Printf("LS -> %s:%s -> %s: %%+v\n", %s)]], filepath, line, label, text)
+	if options.path_format == "short" then
+		filepath = u.shortenpath(vim.fn.expand("%:p:h"), winnr)
+	elseif options.path_format == "fileonly" then
+		filepath = vim.fn.expand("%:p:t")
+	end
+
+	return string.format(
+		[[olog.Printf("%s %s:%s %s %s: %%+v\n", %s)]],
+		options.prefix,
+		filepath,
+		line,
+		options.separator,
+		label,
+		text
+	)
 end
 
 return GoLogger
