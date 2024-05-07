@@ -3,7 +3,7 @@
 A [Treesitter](https://github.com/nvim-treesitter/nvim-treesitter)-based, [Turbo Console Log](https://github.com/Chakroun-Anas/turbo-console-log)-inspired, lua-written, NeoVim plugin.
 
 
-Makes debugging easier by automating the process of writting log messages.
+Makes debugging easier by automating the process of writing log messages.
 
 ## Install
 
@@ -35,6 +35,11 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.keymap.set("n", "<localleader>lg", function()
 			require("logsitter").log()
 		end)
+
+		-- experimental visual mode
+		vim.keymap.set("x", "<localleader>lg", function()
+			require("logsitter").log_visual()
+		end)
 	end,
 })
 ```
@@ -60,6 +65,7 @@ vim.keymap.set("n", "<localleader>lg", function()
 end)
 
 ```
+
 ## License
 
 MIT

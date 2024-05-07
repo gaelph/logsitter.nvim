@@ -103,20 +103,62 @@ function M.log()
 	vim.api.nvim_feedkeys(output, "n", true)
 end
 
-M.register(
-	require("logsitter.lang.javascript"),
-	{
-		"javascript",
-		"javascriptreact",
-		"javascript.jsx",
-		"typescript",
-		"typescriptreact",
-		"typescript.tsx",
-		"vue",
-		"svelte",
-		"astro",
-	}
-)
+function M.log_visual()
+	local logger = get_logger(vim.bo.filetype)
+	if logger == nil then
+		print("No logger for " .. vim.bo.filetype)
+		return
+	end
+
+	local output = u.rtc("<esc>")
+	vim.api.nvim_feedkeys(output, "n", true)
+
+	local start = vim.fn.getpos("'<")
+	local stop = vim.fn.getpos("'>")
+	local winnr = vim.api.nvim_get_current_win()
+	local bufnr = vim.api.nvim_get_current_buf()
+
+	local node = vim.treesitter.get_node({
+		bufnr = bufnr,
+		pos = { start[1], start[2] },
+	})
+
+	if node == nil then
+		vim.cmd('echoerr "No node found"')
+	end
+
+	local insert_pos = get_insertion_position(logger, node, winnr)
+
+	local s = start[2] - 1
+	local e = stop[2] + 1
+	local text = vim.api.nvim_buf_get_lines(bufnr, s, e, false)[1]
+
+	if text == nil then
+		print("No text selected")
+		return
+	end
+
+	text = string.sub(text, start[3], stop[3])
+
+	output = logger.log(text, insert_pos, winnr)
+	output = output .. "<esc>gv"
+	output = u.rtc(output)
+
+	vim.api.nvim_win_set_cursor(winnr, insert_pos)
+	vim.api.nvim_feedkeys(output, "n", true)
+end
+
+M.register(require("logsitter.lang.javascript"), {
+	"javascript",
+	"javascriptreact",
+	"javascript.jsx",
+	"typescript",
+	"typescriptreact",
+	"typescript.tsx",
+	"vue",
+	"svelte",
+	"astro",
+})
 M.register(require("logsitter.lang.go"), { "go" })
 M.register(require("logsitter.lang.lua"), { "lua" })
 M.register(require("logsitter.lang.python"), { "python" })
