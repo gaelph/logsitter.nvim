@@ -98,7 +98,7 @@ SwiftLogger.checks = {
 	{
 		name = "declaration",
 		test = function(_, type)
-			return vim.endswidth(type, "declaration")
+			return vim.endswith(type, "declaration")
 		end,
 		handle = function(node, _)
 			if node:type() == "function_declaration" then
@@ -181,7 +181,7 @@ SwiftLogger.checks = {
 	{
 		name = "statement",
 		test = function(_, type)
-			return vim.endswidth(type, "statement")
+			return vim.endswith(type, "statement")
 		end,
 		handle = function(node, _)
 			return node, constants.PLACEMENT_BELOW
