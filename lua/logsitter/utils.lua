@@ -43,4 +43,22 @@ function M.shortenpath(filepath, winnr)
 	return filepath
 end
 
+---@param position Position
+---@param winnr number
+---@param options LogsitterOptions
+---@return string
+function M.get_current_file_path(position, winnr, options)
+	local filepath = vim.fn.expand("%:.")
+
+	if options.path_format == "short" then
+		filepath = M.shortenpath(vim.fn.expand("%:p:h"), winnr)
+	elseif options.path_format == "fileonly" then
+		filepath = vim.fn.expand("%:p:t")
+	end
+
+	local line = position[1]
+
+	return string.format("%s:%d", filepath, line)
+end
+
 return M

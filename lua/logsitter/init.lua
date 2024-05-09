@@ -31,6 +31,7 @@ local function parent_declaration(checks, node)
 
 		for _, c in ipairs(checks) do
 			if c.test(parent, type) then
+				print("found a " .. c.name .. " (" .. type .. ")")
 				r, placement = c.handle(parent, type)
 
 				if r ~= nil then
@@ -124,8 +125,9 @@ function M.log()
 	local insert_pos = get_insertion_position(logger, node, winnr)
 
 	local text = u.node_text(logger.expand(node))
+	local filelocation = u.get_current_file_path(insert_pos, winnr, M.options)
 
-	local output = logger.log(text, insert_pos, winnr, M.options)
+	output = logger.log(text, filelocation, M.options)
 	output = output .. "<esc>"
 	output = u.rtc(output)
 
@@ -180,8 +182,9 @@ function M.log_visual()
 	end
 
 	text = string.sub(text, start[3], stop[3])
+	local filelocation = u.get_current_file_path(insert_pos, winnr, M.options)
 
-	output = logger.log(text, insert_pos, winnr, M.options)
+	output = logger.log(text, filelocation, M.options)
 	output = output .. "<esc>gv"
 	output = u.rtc(output)
 

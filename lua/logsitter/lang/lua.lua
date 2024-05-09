@@ -120,26 +120,16 @@ function LuaLogger.expand(node)
 end
 
 ---@param text string
--- @param position number
----@param winnr number
+---@param filelocation string
 ---@param options LogsitterOptions
 ---@return string
-function LuaLogger.log(text, position, winnr, options)
+function LuaLogger.log(text, filelocation, options)
 	local label = text:gsub('"', '\\"')
-	local filepath = vim.fn.expand("%:.")
-	local line = position[1]
-
-	if options.path_format == "short" then
-		filepath = u.shortenpath(vim.fn.expand("%:p:h"), winnr)
-	elseif options.path_format == "fileonly" then
-		filepath = vim.fn.expand("%:p:t")
-	end
 
 	return string.format(
-		[[oprint("%s %s:%s %s %s: " .. vim.inspect(%s))]],
+		[[oprint("%s %s %s %s: " .. vim.inspect(%s))]],
 		options.prefix,
-		filepath,
-		line,
+		filelocation,
 		options.separator,
 		label,
 		text

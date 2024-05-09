@@ -1,0 +1,276 @@
+*logsitter.txt*                           Easily add log messages to your code
+
+A Treesitter-based, Turbo Console Log-inspired, lua-written, NeoVim plugin.
+
+Logsitter makes debugging easier by automating the process of writing log
+messages.
+
+Supported languages:
+
+- Javascript/Typescript and Svelte/Vue/Astro (`console.log()`)
+- Golang (`log.Println("... %+v\n", ...)`)
+- Lua (`print()`)
+
+Experimental support for:
+
+- Python (`print()`)
+- Swift (`print()`)
+
+==============================================================================
+LOGSITTER CONFIGURATION                                     *logsitter-config*
+
+Logsitter can be configured via the `setup(opts?)` function, although this is
+not required.
+
+The `opts` table can contain the following keys:
+>
+    path_format: string  -- Format for the path to the file in the log message
+                         -- Available values:
+                         -- - "default": path to file current file relative to
+                         --              the current working directory
+                         -- - "short": same as "default", but shorten using
+                         --            the `pathshorten()` function
+                         -- - "fileonly": only displays the current file name
+    prefix: string       -- Prefix for the log message, can contain emojis
+    separator: string    -- Separator betweent the file path and the displayed
+                         -- value
+<
+NOTE: For the `swift` language, `path_format` has no effect, as its |Logger|
+uses `#file` and `#line` to display the location.
+
+The default configuration is:
+
+>lua
+    {
+        path_format = "default",
+        prefix = "[LS] ->",
+        separator = "->"
+    }
+<
+
+==============================================================================
+LOGSITTER USAGE                                              *logsitter-usage*
+
+The `logsitter.log()` function adds a log message inspecting the value under the
+cursor, using tree sitter to guess where the log statement should be inserted.
+
+You can add a keymapping to call the |logsitter.log()| function:
+>lua
+    vim.keymap.set("n", "<localleader>lg", function()
+        require("logsitter").log()
+    end)
+<
+
+Additionally, there is an experimental support for visual selection:
+>lua
+    vim.keymap.set("x", "<localleader>lg", function()
+        require("logsitter").log_visual()
+    end)
+<
+
+==============================================================================
+FILETYPES                                                *logsitter-filetypes*
+
+There are currently 5 "loggers", each associated with the following filetypes:
+
+1. `logsitter.lang.javascript`:
+        - javascript, javascriptreact, javascript.jsx
+        - typescript, typescriptreact, typescript.tsx
+        - vue
+        - svelte
+        - astro
+2. `logsitter.lang.golang`:
+        - go
+3. `logsitter.lang.lua`:
+        - lua
+4. `logsitter.lang.python`:
+        - python
+5. `logsitter.lang.swift`:
+        - swift
+
+
+==============================================================================
+EXTENDING LOGSITTER                                      *logsitter-extending*
+
+------------------------------------------------------------------------------
+1. ADDING FILETYPES                               *logsitter-adding-filetypes*
+You can use the existing "loggers" withe other filetypes with the
+|logsitter.register()| function:
+>lua
+    require("logsitter").register(
+        require("logsitter.lang.javascript"),
+        { "other_filetype" },
+    )
+
+------------------------------------------------------------------------------
+2. ADDING LANGUAGES                               *logsitter-adding-languages*
+Adding support for a new language can be achieved by implementing
+a new |Logger|, and then registering it with |logsitter.register()|:
+
+>lua
+    require("logsitter").register(
+        your_logger_for_your language,
+        { "the_filetype_for_your_language" },
+    )
+<
+
+==============================================================================
+HOW IT WORKS
+
+When in a buffer whose filetype has been associated with a |Logger| through the
+|logsitter.register()| function, the |logsitter.log()| function will add a log
+statement, using treesitter to determine the most appropriate location to insert
+it.
+
+It does so by climbing up the node tree and calling the |Check.test()| function
+for every |Check| in the |Logger| until it finds one that matches, or reaches
+the root of the tree.
+
+If a |Check| matches, its |Check.handle()| function is called with the matching
+node. This function should return the |TSNode| around which the log statement
+will be inserted as well as "placement" indicator, either "below", "above" or
+"inside". If no |Check| matches, the default behavior is to insert the log
+statement below the node under the cursor.
+
+Sometimes, the node under the cursor is not representative of what should be
+logged. For instance, if the cursor is on a function call, we expect the result
+of the call to be logged, but the node under the cursor is likely on a
+`member expression`, and what would be logged is the function itself, not the
+result of the call.
+|Logger.expand()| gives the opportunity to return a parent of the node
+under the cursor that should be used instead.
+
+Finally, |Logger.log()| is called with the "expanded" |TSNode|, the file name
+formatted according to the `path_format` option, and the options. It returns a
+`string` that will be passed to |nvim_replace_termcodes()| and
+|nvim_feedkeys()|.
+
+==============================================================================
+LOGSITTER API                                                  *logsitter-api*
+
+------------------------------------------------------------------------------
+FUNCTIONS
+
+logsitter.log()                                              *logsitter.log()*
+    Adds a log message inspecting the value under the cursor, using treesitter.
+
+logsitter.log_visual()                                *logsitter.log_visual()*
+    Adds a log message inspecting the visual selection, using treesitter.
+    The first node of the selection is used to place the log statement.
+
+register({logger}, {filetypes})                         *logsitter.register()*
+    Associates a |Logger| with a list of filetypes.
+	It can be used to add support for new filetypes to an existing
+	|Logger| (see |logsitter-filetypes|) or to add support for a new
+	language by implementing a new |Logger|.
+
+setup({opts})                                              *logsitter.setup()*
+    Configures the plugin. See |logsitter-config| for more information.
+
+------------------------------------------------------------------------------
+LOGGER                                                                *Logger*
+A |Logger| allows adding support for new languages to logsitter.
+It is a table with the following fields:
+
+checks: table                                                  *Logger.checks*
+    List of |Check| to run on a node to determine its type,
+    and where to insert the log statement.
+
+log({text}, {filelocation}, {options})                          *Logger.log()*
+    Returns the key sequence to insert a log statement.
+    It will be passed to |nvim_feedkeys()|, and typically starts with `o`.
+
+    Arguments: ~
+    {text}          A `string` representing the expression to log.
+                    For example, if the cursor is on the `foo` variable,
+                    the text will be `foo`. But if the cursor is on a function
+                    call, e.g. `foo(bar)`, the text will be `foo(bar)`.
+    {filelocation}  A `string` representing the location of the log statement.
+                    It will be formatted according to the `path_format` option.
+                    See |logsitter-config| for more information.
+    {options}       The options passed to the `logsitter.setup()` function.
+                    See |logsitter-config| for more information.
+
+    Returns: ~
+    A `string` representing the key sequence to insert the log statement.
+
+expand({node})                                               *Logger.expand()*
+    "Expands" the node under the cursor in order to have something more
+    meaningful to log. For instance, if the cursor is on a `function_call`
+    statement, the node under the cursor is likely not the `call_expression`,
+    but `member_expression`, or some getter expression.
+    `expand()` should return the `function_call` node to log the result of the
+    call instead of the function.
+
+    Arguments: ~
+    {node}        The |TSNode| under the cursor.
+
+    Returns: ~
+    A parent of `{node}` or `{node}` itself. The text of this node will be
+    passed as `{text}` to the the |Logger.log()| function.
+
+------------------------------------------------------------------------------
+CHECK                                                                  *Check*
+A |Check| is used to determine where to place the log statement.
+It is a table with the following keys:
+
+name: string                                                      *Check.name*
+    A descriptive name for this |Check|.
+
+test({node}, {type})                                            *Check.test()*
+    Returns `true` if `{node}` is to be handled by this |Check|
+
+    Arguments: ~
+    {node}      The |TSNode| to test, likely the node under the cursor.
+    {type}      A `string` representing the type of the node.
+                e.g.: `"function_call"`, `"simple_identifier"`, etc.
+                This is highly dependent on the parser.
+
+    Returns: ~
+        `true` if `{node}` is to be handled by this |Check|, `false` otherwise.
+
+handle({node}, {type})                                        *Check.handle()*
+	Used to determine where to insert the log statement. This function is only
+	called if |Check.test()| returns `true`, and takes the same arguments.
+
+    Arguments: ~
+    {node}      The |TSNode| to handle
+    {type}      A `string` representing the type of the node.
+                e.g.: `"function_call"`, `"simple_identifier"`, etc.
+                This is highly dependent on the parser.
+
+    Returns: ~
+    {node}          The |TSNode| around which to place the log statement.
+				    If `nil`, the node passed as argument is used.
+    {placement}     A `string` indicating where to insert the log statement
+                    relative to the returned `TSNode`.
+                    Possible values are:
+                    - `"below"`: insert the log statement below the returned
+                      node (this is the default behavior);
+                    - `"above"`: insert the log statement above the returned,
+                      like for `return` and `switch` statements;
+                    - `"inside"`: insert the log statement below the first line
+                      of the returned node, like for the body of a function, or
+                      a `for` loop in C-type languages.
+                    If `nil`, `"below"` is used.
+
+Example implementation:                                        *Check-example*
+>lua
+    {
+        name = "statement",
+        test = function(node, type)
+            return vim.endswith(type, "_statement")
+        end,
+        handle = function(node, type)
+            if type == "return_statement" then
+                return node, "above"
+            end
+
+            return node, "below"
+        end
+    }
+<
+
+
+
+vim:ft=help:textwidth=80:tabstop=4:set expandtab

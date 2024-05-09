@@ -2,7 +2,7 @@
 require("logsitter.types.logger")
 
 ---@class JavascriptLogger : Logger
----@field log fun(text:string, insert_pos:Position, winnr:number, options:LogsitterOptions): string  Adds a log statement to the buffer.
+---@field log fun(text:string, filelocation:string, options:LogsitterOptions): string  Adds a log statement to the buffer.
 ---@field expand fun(node:TSNode): TSNode		Expands the node to have something meaning full to print.
 ---@field checks Check[]		List of checks to run on the node to decide where to place the log statement.
 local JavascriptLogger = {}
@@ -174,27 +174,16 @@ end
 
 ---Inserts the text
 ---@param text string  The stringified (expanded) node under the cursor
----@param position [number, number]  The current cursor position
----@param winnr number  The current window number
+---@param filelocation string
 ---@param options LogsitterOptions  The options passed to the logger
 ---@return string  The text to insert in the buffer
-function JavascriptLogger.log(text, position, winnr, options)
+function JavascriptLogger.log(text, filelocation, options)
 	local label = text:gsub('"', '\\"')
-	local filepath = vim.fn.expand("%:.")
-
-	if options.path_format == "short" then
-		filepath = u.shortenpath(vim.fn.expand("%:p:h"), winnr)
-	elseif options.path_format == "fileonly" then
-		filepath = vim.fn.expand("%:p:t")
-	end
-
-	local line = position[1]
 
 	return string.format(
-		'oconsole.log("%s %s:%s %s %s: ", %s)',
+		'oconsole.log("%s %s %s %s: ", %s)',
 		options.prefix,
-		filepath,
-		line,
+		filelocation,
 		options.separator,
 		label,
 		text

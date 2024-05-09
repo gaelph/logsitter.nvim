@@ -2,7 +2,7 @@
 require("logsitter.types.logger")
 
 ---@class SwiftLogger : Logger
----@field log fun(text:string, insert_pos:Position, winnr:number, options:LogsitterOptions): string  Adds a log statement to the buffer.
+---@field log fun(text:string, filelocation:string, options:LogsitterOptions): string  Adds a log statement to the buffer.
 ---@field expand fun(node:TSNode): TSNode		Expands the node to have something meaning full to print.
 ---@field checks Check[]		List of checks to run on the node to decide where to place the log statement.
 local SwiftLogger = {}
@@ -12,28 +12,28 @@ local constants = require("logsitter.constants")
 
 SwiftLogger.checks = {
 	{
+		name = "return",
+		test = function(_, type)
+			return type == "control_transfert_statement"
+		end,
+		handle = function(node, _)
+			return node, constants.PLACEMENT_ABOVE
+		end,
+	},
+	{
 		name = "function_call",
 		test = function(_, type)
 			return type == "call_expression"
 		end,
 		handle = function(node, _)
 			local grand_parent = node:parent()
-
-			if grand_parent == nil then
-				return node, constants.PLACEMENT_BELOW
-			end
-
 			local gp_type = grand_parent:type()
 
-			if gp_type == "statements" or gp_type == "function_declaration" then
-				return node, constants.PLACEMENT_BELOW
-			end
-
-			if gp_type == "control_transfert_statement" then
+			if gp_type == "control_transfer_statement" then
 				return node, constants.PLACEMENT_ABOVE
 			end
 
-			return nil, nil
+			return node, constants.PLACEMENT_BELOW
 		end,
 	},
 	{
@@ -67,15 +67,6 @@ SwiftLogger.checks = {
 				end
 			end
 			return statements, constants.PLACEMENT_ABOVE
-		end,
-	},
-	{
-		name = "return",
-		test = function(_, type)
-			return type == "control_transfert_statement"
-		end,
-		handle = function(node, _)
-			return node, constants.PLACEMENT_ABOVE
 		end,
 	},
 	{
@@ -178,15 +169,6 @@ SwiftLogger.checks = {
 			return node, constants.PLACEMENT_BELOW
 		end,
 	},
-	{
-		name = "statement",
-		test = function(_, type)
-			return vim.endswith(type, "statement")
-		end,
-		handle = function(node, _)
-			return node, constants.PLACEMENT_BELOW
-		end,
-	},
 }
 
 function SwiftLogger.expand(node)
@@ -218,7 +200,7 @@ function SwiftLogger.expand(node)
 	return node
 end
 
-function SwiftLogger.log(text, _, _, options)
+function SwiftLogger.log(text, _, options)
 	local label = text:gsub('"', '\\"')
 
 	return string.format(
