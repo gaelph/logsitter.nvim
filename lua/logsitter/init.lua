@@ -162,7 +162,7 @@ function M.log_visual()
 
 	local node = vim.treesitter.get_node({
 		bufnr = bufnr,
-		pos = { start[1], start[2] },
+		pos = { start[2], start[3] },
 	})
 
 	if node == nil then
