@@ -196,7 +196,8 @@ end
 function M.clear_buf()
 	local esc_prefix = vim.fn.escape(M.options.prefix, [[^$.*?/\[]~]])
 	local cmd = string.format([[g/%s/norm da(dd<cr>]], esc_prefix)
-	vim.cmd(cmd)
+	---@diagnostic disable-next-line: param-type-mismatch
+	pcall(vim.cmd, cmd)
 end
 
 ---Clears all log statements for all files in the project
@@ -204,8 +205,12 @@ function M.clear_all()
 	local esc_prefix = vim.fn.escape(M.options.prefix, [[^$.*?/\[]~]])
 	local cmd = string.format([[g/%s/norm da(dd<cr>]], esc_prefix)
 
-	vim.cmd(([[vimgrep /%s/j ./**/*]]):format(esc_prefix))
-	vim.cmd("cdo " .. cmd)
+	---@diagnostic disable-next-line: param-type-mismatch
+	local ok = pcall(vim.cmd, ([[vimgrep /%s/j ./**/*]]):format(esc_prefix))
+	if ok then
+		---@diagnostic disable-next-line: param-type-mismatch
+		pcall(vim.cmd, "cdo " .. cmd)
+	end
 end
 
 M.register(require("logsitter.lang.javascript"), {
