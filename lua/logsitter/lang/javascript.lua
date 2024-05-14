@@ -181,7 +181,8 @@ function JavascriptLogger.log(text, filelocation, options)
 	local label = text:gsub('"', '\\"')
 
 	return string.format(
-		'oconsole.log("%s %s %s %s: ", %s)',
+		'o%s("%s %s %s %s: ", %s)',
+		u.get_log_function(options, "console.log"),
 		options.prefix,
 		filelocation,
 		options.separator,

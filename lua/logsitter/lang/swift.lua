@@ -204,7 +204,8 @@ function SwiftLogger.log(text, _, options)
 	local label = text:gsub('"', '\\"')
 
 	return string.format(
-		[[oprint("%s \(#file):\(#line) %s %s: \(%s)")]],
+		[[o%s("%s \(#file):\(#line) %s %s: \(%s)")]],
+		u.get_log_function(options, "print"),
 		options.prefix,
 		options.separator,
 		label,

@@ -61,4 +61,15 @@ function M.get_current_file_path(position, winnr, options)
 	return string.format("%s:%d", filepath, line)
 end
 
+function M.get_log_function(options, default)
+	local ft = vim.api.nvim_buf_get_option(0, "filetype")
+	local log_function = default
+
+	if options.logging_functions[ft] ~= nil then
+		log_function = options.logging_functions[ft]
+	end
+
+	return log_function
+end
+
 return M

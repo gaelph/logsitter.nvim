@@ -34,8 +34,10 @@ The `opts` table can contain the following keys:
                          --            the `pathshorten()` function
                          -- - "fileonly": only displays the current file name
     prefix: string       -- Prefix for the log message, can contain emojis
-    separator: string    -- Separator betweent the file path and the displayed
+    separator: string    -- Separator between the file path and the displayed
                          -- value
+	logging_functions    -- `string:string` table to use custom logging
+						 -- functions per filytype
 <
 NOTE: For the `swift` language, `path_format` has no effect, as its |Logger|
 uses `#file` and `#line` to display the location.
@@ -46,7 +48,17 @@ The default configuration is:
     {
         path_format = "default",
         prefix = "[LS] ->",
-        separator = "->"
+        separator = "->",
+		logging_functions = {
+			javascript = "console.log",
+			javascriptreact = "console.log",
+			typescript = "console.log",
+			typescriptreact = "console.log",
+			lua = "print",
+			go = "log.Printf",
+			python = "print",
+			swift = "print",
+		}
     }
 <
 

@@ -127,7 +127,8 @@ function LuaLogger.log(text, filelocation, options)
 	local label = text:gsub('"', '\\"')
 
 	return string.format(
-		[[oprint("%s %s %s %s: " .. vim.inspect(%s))]],
+		[[o%s("%s %s %s %s: " .. vim.inspect(%s))]],
+		u.get_log_function(options, "print"),
 		options.prefix,
 		filelocation,
 		options.separator,

@@ -139,7 +139,8 @@ function GoLogger.log(text, filelocation, options)
 	local label = text:gsub('"', '\\"')
 
 	return string.format(
-		[[olog.Printf("%s %s %s %s: %%+v\n", %s)]],
+		[[o%s("%s %s %s %s: %%+v\n", %s)]],
+		u.get_log_function(options, "log.Printf"),
 		options.prefix,
 		filelocation,
 		options.separator,

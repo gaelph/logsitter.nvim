@@ -136,7 +136,8 @@ function PythonLogger.log(text, filelocation, options)
 	local label = text:gsub('"', '\\"')
 
 	return string.format(
-		[[oprint(f'%s %s %s %s: {%s}\n')]],
+		[[o%s(f'%s %s %s %s: {%s}\n')]],
+		u.get_log_function(options, "print"),
 		options.prefix,
 		filelocation,
 		options.separator,
