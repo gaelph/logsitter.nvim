@@ -8,4 +8,8 @@ if exists('g:loaded_logsitter')
 endif
 let g:loaded_logsitter = 1
 
-command! -nargs=*  Logsitter lua require('logsitter').log(<f-args>)
+command! Logsitter lua require('logsitter').log()
+command! -range LogsitterV lua require('logsitter').log_visual()
+
+command! LogsitterClearBuf lua require('logsitter').clear_buf()
+command! LogsitterClearAll lua require('logsitter').clear_all()

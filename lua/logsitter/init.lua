@@ -192,6 +192,22 @@ function M.log_visual()
 	vim.api.nvim_feedkeys(output, "n", false)
 end
 
+---Clears all log statements for the current buffer
+function M.clear_buf()
+	local esc_prefix = vim.fn.escape(M.options.prefix, [[^$.*?/\[]~]])
+	local cmd = string.format([[g/%s/norm da(dd<cr>]], esc_prefix)
+	vim.cmd(cmd)
+end
+
+---Clears all log statements for all files in the project
+function M.clear_all()
+	local esc_prefix = vim.fn.escape(M.options.prefix, [[^$.*?/\[]~]])
+	local cmd = string.format([[g/%s/norm da(dd<cr>]], esc_prefix)
+
+	vim.cmd(([[vimgrep /%s/j ./**/*]]):format(esc_prefix))
+	vim.cmd("cdo " .. cmd)
+end
+
 M.register(require("logsitter.lang.javascript"), {
 	"javascript",
 	"javascriptreact",

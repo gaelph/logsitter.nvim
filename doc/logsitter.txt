@@ -81,6 +81,20 @@ Additionally, there is an experimental support for visual selection:
         require("logsitter").log_visual()
     end)
 <
+To clear all logsitter statements in the current buffer:
+>lua
+    require("logsitter").clear_buf()
+<
+Or with the :LogsitterClearBuf command.
+
+To clear all logsitter statements in the current working directory:
+>lua
+    require("logsitter").clear_all()
+<
+Or with the :LogsitterClearAll command.
+
+NOTE: `clear_all()` uses |:vimgrep| and can be slow. Make sure to set your
+'wildignore' appropriately to avoid long waiting times.
 
 ==============================================================================
 FILETYPES                                                *logsitter-filetypes*
