@@ -28,13 +28,14 @@ With Lazy:
 
 ## Supported Languages
 
-	* Javascript/Typescript and Svelte/Vue/Astro (`console.log()`)
-	* Golang (`log.Println("... %+v\n", ...)`)
-	* Lua (`print()`)
+	- Javascript/Typescript and Svelte/Vue/Astro (`console.log()`)
+	- Golang (`log.Println("... %+v\n", ...)`)
+	- Lua (`print()`)
 
 Experimental support for:
-	* Python (`print()`)
-	* Swift (`print()`)
+
+	- Python (`print()`)
+	- Swift (`print()`)
 
 
 ## Example usage
@@ -80,7 +81,7 @@ end)
 
 ```
 ## Configuration
-These are the default contfiguration values:
+These are the default configuration values:
 ```lua
 local DefaultOptions = {
 	-- Format for the file name.
