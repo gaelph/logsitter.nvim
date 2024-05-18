@@ -206,7 +206,7 @@ function M.clear_all()
 	local cmd = string.format([[g/%s/norm da(dd<cr>]], esc_prefix)
 
 	---@diagnostic disable-next-line: param-type-mismatch
-	local ok = pcall(vim.cmd, ([[vimgrep /%s/j ./**/*]]):format(esc_prefix))
+	local ok = pcall(vim.cmd, ([[grep "%s" .]]):format(esc_prefix))
 	if ok then
 		---@diagnostic disable-next-line: param-type-mismatch
 		pcall(vim.cmd, "cdo " .. cmd)

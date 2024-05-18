@@ -80,6 +80,12 @@ vim.keymap.set("n", "<localleader>lg", function()
 end)
 
 ```
+
+## Commands
+
+- `LogsitterClearBuf`: Removes all log statements inserted with logsitter in the current buffer.
+- `LogsitterClearAll`: Removes all log statements inserted with logsitter in all files in the current working directory. It does so using `:grep`, so you can use `rg` or other `grep` alternatives to make the process faster.
+
 ## Configuration
 These are the default configuration values:
 ```lua
