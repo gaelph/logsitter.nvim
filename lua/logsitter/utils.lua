@@ -1,18 +1,31 @@
 local M = {}
 
----Attempts at returning the first value indexed by a number in a table.
----That is to avoid string indexes, or index errors if the index starts
----neither at 0 nor at 1.
+---Returns the first non-nil value indexed by a number in a table.
+---Handles tables that start at index 0 or 1.
 ---@generic T
 ---@param tbl T[]
 ---@return T|nil
 function M.first(tbl)
-	local i = 0
-	while tbl[i] == nil and i <= #tbl do
-		i = i + 1
+	-- Standard case: index starts at 1
+	if tbl[1] ~= nil then
+		return tbl[1]
 	end
 
-	return tbl[i]
+	-- Alternative case: index starts at 0
+	if tbl[0] ~= nil then
+		return tbl[0]
+	end
+
+	-- Fallback: search for the first numeric element
+	-- (for edge cases where index starts elsewhere)
+	for i = 0, #tbl do
+		if tbl[i] ~= nil then
+			return tbl[i]
+		end
+	end
+
+	-- No element found
+	return nil
 end
 
 ---Shorthand for replace_termcodes
