@@ -54,16 +54,29 @@ function M.node_text(node)
 	return vim.treesitter.get_node_text(node, 0)
 end
 
----@param filepath string
----@param winnr number
----@return string
+---Shortens a file path relative to the current working directory
+---@param filepath string  The full file path
+---@param winnr number  The window number
+---@return string  The shortened path
 function M.shortenpath(filepath, winnr)
 	local cwd = vim.fn.getcwd(winnr)
-	filepath = filepath:sub(#cwd)
+
+	-- Normalize paths first to avoid separator issues
 	filepath = vim.fs.normalize(filepath)
+	cwd = vim.fs.normalize(cwd)
+
+	-- Remove cwd prefix only if it's actually present at the start
+	if vim.startswith(filepath, cwd) then
+		-- +2 to also remove the separator slash
+		filepath = filepath:sub(#cwd + 2)
+	end
+
+	-- Get the filename
 	local filename = vim.fn.expand("%:t")
 
-	filepath = vim.fn.pathshorten(filepath .. "/" .. filename)
+	-- Build the path avoiding double slashes
+	local dir = filepath == "" and "" or filepath .. "/"
+	filepath = vim.fn.pathshorten(dir .. filename)
 
 	return filepath
 end
