@@ -61,11 +61,16 @@ function M.get_current_file_path(position, winnr, options)
 	return string.format("%s:%d", filepath, line)
 end
 
+---Gets the log function for the current filetype
+---@param options LogsitterOptions
+---@param default string  Default log function name
+---@return string  The log function to use
 function M.get_log_function(options, default)
-	local ft = vim.api.nvim_buf_get_option(0, "filetype")
+	-- Use modern vim.bo API instead of deprecated nvim_buf_get_option
+	local ft = vim.bo[0].filetype
 	local log_function = default
 
-	if options.logging_functions[ft] ~= nil then
+	if options.logging_functions and options.logging_functions[ft] ~= nil then
 		log_function = options.logging_functions[ft]
 	end
 
