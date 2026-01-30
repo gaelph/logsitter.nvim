@@ -20,28 +20,27 @@ local u = require("logsitter.utils")
 ---@param node TSNode
 ---@return TSNode|nil, Placement
 local function parent_declaration(checks, node)
-  local parent = node
+	local parent = node
 
-  while parent ~= nil do
-    local type = parent:type()
-    local r = nil
-    local placement = "below" ---@type string|nil
+	while parent ~= nil do
+		local type = parent:type()
+		local r = nil
+		local placement = "below" ---@type string|nil
 
-    for _, c in ipairs(checks) do
-      if c.test(parent, type) then
-        print("found a " .. c.name .. " (" .. type .. ")")
-        r, placement = c.handle(parent, type)
+		for _, c in ipairs(checks) do
+			if c.test(parent, type) then
+				r, placement = c.handle(parent, type)
 
-        if r ~= nil then
-          return r, placement
-        end
-      end
-    end
+				if r ~= nil then
+					return r, placement
+				end
+			end
+		end
 
-    parent = parent:parent()
-  end
+		parent = parent:parent()
+	end
 
-  return node, constants.PLACEMENT_BELOW
+	return node, constants.PLACEMENT_BELOW
 end
 
 ---@private
@@ -52,26 +51,26 @@ end
 ---@param winnr number
 ---@return [number, number]
 local function get_insertion_position(logger, node, winnr)
-  local pos = vim.api.nvim_win_get_cursor(winnr)
-  local decl, placement = parent_declaration(logger.checks, node)
+	local pos = vim.api.nvim_win_get_cursor(winnr)
+	local decl, placement = parent_declaration(logger.checks, node)
 
-  local line = pos[1] or 0
-  local col = pos[2] or 0
+	local line = pos[1] or 0
+	local col = pos[2] or 0
 
-  if decl ~= nil then
-    if placement == constants.PLACEMENT_BELOW then
-      line, col = decl:end_()
-      line = line + 1
-    elseif placement == constants.PLACEMENT_ABOVE then
-      line, col = decl:start()
-    elseif placement == constants.PLACEMENT_INSIDE then
-      line, col = decl:start()
+	if decl ~= nil then
+		if placement == constants.PLACEMENT_BELOW then
+			line, col = decl:end_()
+			line = line + 1
+		elseif placement == constants.PLACEMENT_ABOVE then
+			line, col = decl:start()
+		elseif placement == constants.PLACEMENT_INSIDE then
+			line, col = decl:start()
 
-      line = line + 1
-    end
-  end
+			line = line + 1
+		end
+	end
 
-  return { line, col }
+	return { line, col }
 end
 
 ---@private
@@ -83,150 +82,151 @@ local loggers = {}
 ---@param filetype string
 ---@return Logger
 local function get_logger(filetype)
-  return loggers[filetype]
+	return loggers[filetype]
 end
 
 local M = {
-  options = DefaultOptions,
+	options = DefaultOptions,
 }
 
 ---Registers a logger for a filetype
 ---@param logger Logger
 ---@param for_file_types string[]
 function M.register(logger, for_file_types)
-  for _, filetype in ipairs(for_file_types) do
-    loggers[filetype] = logger
-  end
+	for _, filetype in ipairs(for_file_types) do
+		loggers[filetype] = logger
+	end
 end
 
 ---Adds a new log statement to the current buffer, detects where to place it
 ---using treesitter
 function M.log()
-  local logger = get_logger(vim.bo.filetype)
-  if logger == nil then
-    print("No logger for " .. vim.bo.filetype)
-    return
-  end
+	local logger = get_logger(vim.bo.filetype)
+	if logger == nil then
+		print("No logger for " .. vim.bo.filetype)
+		return
+	end
 
-  local pos = vim.fn.getpos(".")
+	local pos = vim.fn.getpos(".")
 
-  local winnr = vim.api.nvim_get_current_win()
-  local bufnr = vim.api.nvim_win_get_buf(winnr)
+	local winnr = vim.api.nvim_get_current_win()
+	local bufnr = vim.api.nvim_win_get_buf(winnr)
 
-  ---@type TSNode
-  local cursor = vim.api.nvim_win_get_cursor(winnr)
+	---@type TSNode
+	local cursor = vim.api.nvim_win_get_cursor(winnr)
 
-  local node = vim.treesitter.get_node({
+	local node = vim.treesitter.get_node({
 		bufnr = bufnr,
 		pos = { cursor[1] - 1, cursor[2] },
 	})
 
-  if node == nil then
-    vim.cmd('echoerr "No node found"')
-    return
-  end
+	if node == nil then
+		vim.cmd('echoerr "No node found"')
+		return
+	end
 
-  local insert_pos = get_insertion_position(logger, node, winnr)
+	local insert_pos = get_insertion_position(logger, node, winnr)
 
-  local text = u.node_text(logger.expand(node))
-  local filelocation = u.get_current_file_path(insert_pos, winnr, M.options)
+	local text = u.node_text(logger.expand(node))
+	local filelocation = u.get_current_file_path(insert_pos, winnr, M.options)
 
-  output = logger.log(text, filelocation, M.options)
-  output = output .. "<esc>"
-  output = u.rtc(output)
+	local output = logger.log(text, filelocation, M.options)
+	output = output .. "<esc>"
+	output = u.rtc(output)
 
-  vim.api.nvim_win_set_cursor(winnr, insert_pos)
-  vim.api.nvim_feedkeys(output, "n", false)
+	vim.api.nvim_win_set_cursor(winnr, insert_pos)
+	vim.api.nvim_feedkeys(output, "n", false)
 
-  -- reset cursor position
-  vim.defer_fn(function()
-    -- if we are inserting above, move the cursor to the next line
-    if insert_pos[1] == pos[2] then
-      pos[2] = pos[2] + 1
-    end
-    vim.api.nvim_win_set_cursor(winnr, { pos[2], pos[3] })
-  end, 10)
+	-- reset cursor position
+	vim.defer_fn(function()
+		-- if we are inserting above, move the cursor to the next line
+		-- insert_pos[1] is 0-indexed (Treesitter), pos[2] is 1-indexed (getpos)
+		if insert_pos[1] < pos[2] then
+			pos[2] = pos[2] + 1
+		end
+		vim.api.nvim_win_set_cursor(winnr, { pos[2], pos[3] })
+	end, 10)
 end
 
 ---Same as log(), but for visual selection
 function M.log_visual()
-  local logger = get_logger(vim.bo.filetype)
-  if logger == nil then
-    print("No logger for " .. vim.bo.filetype)
-    return
-  end
+	local logger = get_logger(vim.bo.filetype)
+	if logger == nil then
+		print("No logger for " .. vim.bo.filetype)
+		return
+	end
 
-  local output = u.rtc("<esc>")
-  vim.api.nvim_feedkeys(output, "n", true)
+	local output = u.rtc("<esc>")
+	vim.api.nvim_feedkeys(output, "n", true)
 
-  local start = vim.fn.getpos("'<")
-  local stop = vim.fn.getpos("'>")
-  local winnr = vim.api.nvim_get_current_win()
-  local bufnr = vim.api.nvim_get_current_buf()
+	local start = vim.fn.getpos("'<")
+	local stop = vim.fn.getpos("'>")
+	local winnr = vim.api.nvim_get_current_win()
+	local bufnr = vim.api.nvim_get_current_buf()
 
-  local node = vim.treesitter.get_node({
+	local node = vim.treesitter.get_node({
 		bufnr = bufnr,
 		pos = { start[2] - 1, start[3] - 1 },
 	})
 
-  if node == nil then
-    vim.cmd('echoerr "No node found"')
-    return
-  end
+	if node == nil then
+		vim.cmd('echoerr "No node found"')
+		return
+	end
 
-  local insert_pos = get_insertion_position(logger, node, winnr)
+	local insert_pos = get_insertion_position(logger, node, winnr)
 
-  local s = start[2] - 1
-  local e = stop[2] + 1
-  local text = vim.api.nvim_buf_get_lines(bufnr, s, e, false)[1]
+	local s = start[2] - 1
+	local e = stop[2] + 1
+	local text = vim.api.nvim_buf_get_lines(bufnr, s, e, false)[1]
 
-  if text == nil then
-    print("No text selected")
-    return
-  end
+	if text == nil then
+		print("No text selected")
+		return
+	end
 
-  text = string.sub(text, start[3], stop[3])
-  local filelocation = u.get_current_file_path(insert_pos, winnr, M.options)
+	text = string.sub(text, start[3], stop[3])
+	local filelocation = u.get_current_file_path(insert_pos, winnr, M.options)
 
-  output = logger.log(text, filelocation, M.options)
-  output = output .. "<esc>gv"
-  output = u.rtc(output)
+	local output = logger.log(text, filelocation, M.options)
+	output = output .. "<esc>gv"
+	output = u.rtc(output)
 
-  vim.api.nvim_win_set_cursor(winnr, insert_pos)
-  vim.api.nvim_feedkeys(output, "n", false)
+	vim.api.nvim_win_set_cursor(winnr, insert_pos)
+	vim.api.nvim_feedkeys(output, "n", false)
 end
 
 ---Clears all log statements for the current buffer
 function M.clear_buf()
-  local esc_prefix = vim.fn.escape(M.options.prefix, [[^$.*?/\[]~]])
-  local cmd = string.format([[g/%s/norm da(dd<cr>]], esc_prefix)
-  ---@diagnostic disable-next-line: param-type-mismatch
-  pcall(vim.cmd, cmd)
+	local esc_prefix = vim.fn.escape(M.options.prefix, [[^$.*?/\[]~]])
+	local cmd = string.format([[g/%s/norm da(dd<cr>]], esc_prefix)
+	---@diagnostic disable-next-line: param-type-mismatch
+	pcall(vim.cmd, cmd)
 end
 
 ---Clears all log statements for all files in the project
 function M.clear_all()
-  local esc_prefix = vim.fn.escape(M.options.prefix, [[^$.*?/\[]~]])
-  local cmd = string.format([[g/%s/norm da(dd<cr>]], esc_prefix)
+	local esc_prefix = vim.fn.escape(M.options.prefix, [[^$.*?/\[]~]])
+	local cmd = string.format([[g/%s/norm da(dd<cr>]], esc_prefix)
 
-  ---@diagnostic disable-next-line: param-type-mismatch
-  local ok = pcall(vim.cmd, ([[grep "%s" .]]):format(esc_prefix))
-  if ok then
-    ---@diagnostic disable-next-line: param-type-mismatch
-    pcall(vim.cmd, "cdo " .. cmd)
-  end
+	---@diagnostic disable-next-line: param-type-mismatch
+	local ok = pcall(vim.cmd, ([[grep "%s" .]]):format(esc_prefix))
+	if ok then
+		---@diagnostic disable-next-line: param-type-mismatch
+		pcall(vim.cmd, "cdo " .. cmd)
+	end
 end
 
 M.register(require("logsitter.lang.javascript"), {
-  "javascript",
-  "javascriptreact",
-  "javascript.jsx",
-  "typescript",
-  "typescriptreact",
-  "typescript.tsx",
-  "vue",
-  "svelte",
-  "astro",
+	"javascript",
+	"javascriptreact",
+	"javascript.jsx",
+	"typescript",
+	"typescriptreact",
+	"typescript.tsx",
+	"vue",
+	"svelte",
+	"astro",
 })
 M.register(require("logsitter.lang.go"), { "go" })
 M.register(require("logsitter.lang.lua"), { "lua" })
@@ -236,7 +236,7 @@ M.register(require("logsitter.lang.swift"), { "swift" })
 ---Logsitter
 ---@param options LogsitterOptions
 function M.setup(options)
-  M.options = vim.tbl_deep_extend("force", DefaultOptions, options or {})
+	M.options = vim.tbl_deep_extend("force", DefaultOptions, options or {})
 end
 
 return M
