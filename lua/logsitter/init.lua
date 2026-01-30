@@ -176,16 +176,35 @@ function M.log_visual()
 
 	local insert_pos = get_insertion_position(logger, node, winnr)
 
+	-- Get all lines in the selection
 	local s = start[2] - 1
-	local e = stop[2] + 1
-	local text = vim.api.nvim_buf_get_lines(bufnr, s, e, false)[1]
+	local e = stop[2]
+	local lines = vim.api.nvim_buf_get_lines(bufnr, s, e, false)
 
-	if text == nil then
+	if #lines == 0 then
 		print("No text selected")
 		return
 	end
 
-	text = string.sub(text, start[3], stop[3])
+	local text
+	if #lines == 1 then
+		-- Single-line selection
+		text = string.sub(lines[1], start[3], stop[3])
+	else
+		-- Multi-line selection
+		-- First line: from selection start to end
+		lines[1] = string.sub(lines[1], start[3])
+
+		-- Last line: from start to selection end
+		lines[#lines] = string.sub(lines[#lines], 1, stop[3])
+
+		-- Join with space for a single-line log
+		text = table.concat(lines, " ")
+	end
+
+	-- Clean up multiple spaces and trim
+	text = text:gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
+
 	local filelocation = u.get_current_file_path(insert_pos, winnr, M.options)
 
 	local output = logger.log(text, filelocation, M.options)
