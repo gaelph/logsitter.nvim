@@ -136,7 +136,7 @@ end
 ---@param options LogsitterOptions
 ---@return string
 function GoLogger.log(text, filelocation, options)
-	local label = text:gsub('"', '\\"')
+	local label = u.escape_string(text)
 
 	return string.format(
 		[[o%s("%s %s %s %s: %%+v\n", %s)]],

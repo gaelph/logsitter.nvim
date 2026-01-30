@@ -178,7 +178,7 @@ end
 ---@param options LogsitterOptions  The options passed to the logger
 ---@return string  The text to insert in the buffer
 function JavascriptLogger.log(text, filelocation, options)
-	local label = text:gsub('"', '\\"')
+	local label = u.escape_string(text)
 
 	return string.format(
 		'o%s("%s %s %s %s: ", %s)',

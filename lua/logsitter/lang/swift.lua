@@ -201,7 +201,7 @@ function SwiftLogger.expand(node)
 end
 
 function SwiftLogger.log(text, _, options)
-	local label = text:gsub('"', '\\"')
+	local label = u.escape_string(text)
 
 	return string.format(
 		[[o%s("%s \(#file):\(#line) %s %s: \(%s)")]],

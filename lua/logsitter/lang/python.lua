@@ -133,7 +133,7 @@ function PythonLogger.expand(node)
 end
 
 function PythonLogger.log(text, filelocation, options)
-	local label = text:gsub('"', '\\"')
+	local label = u.escape_string(text)
 
 	return string.format(
 		[[o%s(f'%s %s %s %s: {%s}\n')]],

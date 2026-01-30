@@ -35,6 +35,18 @@ function M.rtc(str)
 	return vim.api.nvim_replace_termcodes(str, true, false, true)
 end
 
+---Escapes special characters in a string for safe inclusion in log statements
+---@param str string  The string to escape
+---@return string  The escaped string
+function M.escape_string(str)
+	return str
+		:gsub('\\', '\\\\')  -- Backslashes FIRST (important!)
+		:gsub('"', '\\"')     -- Double quotes
+		:gsub('\n', '\\n')    -- Newlines
+		:gsub('\r', '\\r')    -- Carriage returns
+		:gsub('\t', '\\t')    -- Tabs
+end
+
 -- Makes node text fit on one line
 ---@param node TSNode
 ---@return string

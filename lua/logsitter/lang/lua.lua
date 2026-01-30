@@ -124,7 +124,7 @@ end
 ---@param options LogsitterOptions
 ---@return string
 function LuaLogger.log(text, filelocation, options)
-	local label = text:gsub('"', '\\"')
+	local label = u.escape_string(text)
 
 	return string.format(
 		[[o%s("%s %s %s %s: " .. vim.inspect(%s))]],
