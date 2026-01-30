@@ -24,14 +24,14 @@ end
 
 -- Makes node text fit on one line
 ---@param node TSNode
----@retusn string
+---@return string
 function M.node_text(node)
 	return vim.treesitter.get_node_text(node, 0)
 end
 
 ---@param filepath string
 ---@param winnr number
----@retunr string
+---@return string
 function M.shortenpath(filepath, winnr)
 	local cwd = vim.fn.getcwd(winnr)
 	filepath = filepath:sub(#cwd)
