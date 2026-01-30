@@ -71,7 +71,7 @@ PythonLogger.checks = {
 	{
 		name = "assign",
 		test = function(_, type)
-			return type == "assignement"
+			return type == "assignment"
 		end,
 		handle = function(node, _)
 			return node, constants.PLACEMENT_BELOW
